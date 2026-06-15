@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/2_Source/Board/CMSIS/",
+                "${workspaceFolder}/2_Source/Board/Library/Include",
+                "${workspaceFolder}/2_Source/Bsp",
+                "${workspaceFolder}/2_Source/Common",
+                "${workspaceFolder}/2_Source/User"
+            ],
+            "defines": [
+                "GD32F427",
+                "USE_STDPERIPH_DRIVER"
+            ],
+            "compilerPath": "D:\\A-toolchain\\mingw64\\bin\\gcc.exe",
+            "cStandard": "c17",
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}
