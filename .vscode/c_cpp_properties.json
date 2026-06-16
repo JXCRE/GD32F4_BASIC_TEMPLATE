@@ -12,7 +12,9 @@
             ],
             "defines": [
                 "GD32F427",
-                "USE_STDPERIPH_DRIVER"
+                "USE_STDPERIPH_DRIVER",
+                "__CC_ARM",
+                "__ARMCC_VERSION=5060528"
             ],
             "compilerPath": "D:\\A-toolchain\\mingw64\\bin\\gcc.exe",
             "cStandard": "c17",

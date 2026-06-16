@@ -33,7 +33,7 @@ OF SUCH DAMAGE.
 */
 
 #include "gd32f4xx_it.h"
-#include "main.h"
+#include "bsp.h"
 
 /*!
     \brief      this function handles NMI exception
@@ -147,5 +147,5 @@ void PendSV_Handler(void)
 */
 void SysTick_Handler(void)
 {
-    
+    bsp_tick_update();
 }

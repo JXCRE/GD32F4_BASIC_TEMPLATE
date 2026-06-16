@@ -1,4 +1,3 @@
-#include "gd32f4xx.h"
 #include "main.h"
 
 
