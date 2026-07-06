@@ -31,6 +31,16 @@ void bsp_systick_init(void)
     NVIC_SetPriority(SysTick_IRQn, 0x00U);
 }
 
+void bsp_nvic_priority_group_set(uint32_t nvic_prigroup)
+{
+    //NVIC_PRIGROUP_PRE0_SUB4
+    //NVIC_PRIGROUP_PRE1_SUB3
+    //NVIC_PRIGROUP_PRE2_SUB2
+    //NVIC_PRIGROUP_PRE3_SUB1
+    //NVIC_PRIGROUP_PRE4_SUB0
+    nvic_priority_group_set(nvic_prigroup);
+}
+
 void bsp_tick_update(void)
 {
     sys_tick++;

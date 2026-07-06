@@ -22,6 +22,7 @@ extern bool _500ms_flag;
 #define FIX_VERSION     0                       //修复版本号
 //--------------------------------------------------SYS
 void bsp_systick_init(void);                    //初始化系统定时器
+void bsp_nvic_priority_group_set(uint32_t nvic_prigroup);
 void bsp_tick_update(void);                     //更新系统tick(系统中断中调用)
 void bsp_delay_1ms(uint32_t ms);                //延时1ms
 void bsp_delay_1us(uint32_t us);                //延时1us(如果us值过大，可能延时异常)

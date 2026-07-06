@@ -26,13 +26,13 @@
 *已实现通用驱动*   
 
 - gpio
+- exit
 
 *未实现通用驱动*   
 
 - adc
 - dac
 - dma
-- exit
 - fmc
 - i2c
 - spi

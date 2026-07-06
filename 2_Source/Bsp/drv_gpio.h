@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include "gd32f4xx.h"
 
+/**
+ * 实现gpio输入输出引脚的初始化功能，支持输入、输出、复用、模拟四种模式，支持上拉、下拉、推挽、开漏等多种配置
+ * ----------时钟需要外部进行配置
+ */
+
 typedef struct{
     uint32_t    port;      //
     uint32_t    pin;       //
