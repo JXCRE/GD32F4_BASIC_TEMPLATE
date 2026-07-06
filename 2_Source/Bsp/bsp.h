@@ -40,4 +40,4 @@ void get_board_version(uint8_t *m_version, uint8_t *s_version, uint8_t *f_versio
 }
 #endif
 
-#endif /* __BSP_H */
+#endif
