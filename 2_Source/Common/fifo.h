@@ -1,5 +1,5 @@
-#ifndef __FIFO_H
-#define __FIFO_H
+#ifndef __FIFO_H__
+#define __FIFO_H__
 
 #include <stdint.h>
 
@@ -13,12 +13,15 @@ typedef void* jxc_handle_t;
 
 jxc_handle_t fifo_create(uint32_t size);
 int fifo_destroy(jxc_handle_t handle);
+
 uint32_t fifo_put(jxc_handle_t handle, uint8_t *data, uint32_t len);
 uint32_t fifo_get(jxc_handle_t handle, uint8_t *data, uint32_t len);
-uint32_t fifo_count(jxc_handle_t handle);
+
+uint32_t fifo_get_count(jxc_handle_t handle);
+uint32_t fifo_del(jxc_handle_t handle, uint32_t num);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __FIFO_H */
+#endif
