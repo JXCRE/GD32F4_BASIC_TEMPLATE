@@ -66,6 +66,11 @@ static IRQn_Type drv_exit_irq_get(exti_line_enum line)
 
 void drv_exit_init(exit_info_t *exit_info)
 {
+    if(!exit_info)
+        return;
+
+    rcu_periph_clock_enable(RCU_SYSCFG);
+
     drv_gpio_init(&exit_info->gpio);
     syscfg_exti_line_config(drv_exit_port_source_get(exit_info->gpio.port), drv_exit_pin_source_get(exit_info->gpio.pin));
     //因为 gpio的pin 和 exti_line_enum 的定义是一样的，所以可以这样进行转换
@@ -79,6 +84,9 @@ void drv_exit_init(exit_info_t *exit_info)
 
 void drv_exit_enable(exit_info_t *exit_info)
 {
+    if(!exit_info)
+        return;
+
     if(exit_info->mode == EXTI_INTERRUPT){
         exti_interrupt_enable((exti_line_enum)exit_info->gpio.pin);
         nvic_irq_enable(drv_exit_irq_get((exti_line_enum)exit_info->gpio.pin), exit_info->pre_priority, exit_info->sub_priority);
@@ -89,6 +97,9 @@ void drv_exit_enable(exit_info_t *exit_info)
 
 void drv_exit_disable(exit_info_t *exit_info)
 {
+    if(!exit_info)
+        return;
+
     if(exit_info->mode == EXTI_INTERRUPT){
         exti_interrupt_disable((exti_line_enum)exit_info->gpio.pin);
     }else{
@@ -98,10 +109,16 @@ void drv_exit_disable(exit_info_t *exit_info)
 
 FlagStatus drv_exit_flag_get(exit_info_t *exit_info)
 {
+    if(!exit_info)
+        return RESET;
+
     return exti_interrupt_flag_get((exti_line_enum)exit_info->gpio.pin);
 }
 
 void drv_exit_flag_clear(exit_info_t *exit_info)
 {
+    if(!exit_info)
+        return;
+
     exti_interrupt_flag_clear((exti_line_enum)exit_info->gpio.pin);
 }

@@ -27,17 +27,20 @@
 
 - gpio
 - exit
+- dma
+- uart
+---
+- fifo
+- queue
 
 *未实现通用驱动*   
 
 - adc
 - dac
-- dma
 - fmc
 - i2c
 - spi
 - timer
-- uart
 
 ## 适配同系列其他芯片   
 
