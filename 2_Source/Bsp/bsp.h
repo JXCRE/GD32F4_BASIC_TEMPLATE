@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "gd32f4xx.h"
-#include "bsp_type.h"
 
 #ifdef __cplusplus
  extern "C" {

@@ -30,15 +30,19 @@ typedef struct{
 
 jxc_handle_t drv_uart_create(char *name, uint32_t uart, uint32_t buffer_size);
 void drv_uart_destroy(jxc_handle_t handle);
+
 int drv_uart_hw_init(jxc_handle_t handle, uart_hardware_t *hw, uart_params_t *params);
 int drv_uart_set_timeout(jxc_handle_t handle, uint32_t timeout);
-int drv_uart_enable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt);
+int drv_uart_enable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt, uint8_t pre_priority, uint8_t sub_priority);
 int drv_uart_disable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt);
+FlagStatus drv_uart_interrupt_flag_get(jxc_handle_t handle, usart_interrupt_flag_enum flag);
+void drv_uart_interrupt_flag_clear(jxc_handle_t handle, usart_interrupt_flag_enum flag);
+
 int drv_uart_write(jxc_handle_t handle, uint8_t *data, uint32_t size);
 int drv_uart_read(jxc_handle_t handle, uint8_t *data, uint32_t size, uint32_t timeout);
 int drv_uart_write_dma(jxc_handle_t handle, uint8_t *data, uint32_t size);
-int drv_uart_read_dma_by_extern(jxc_handle_t handle, uint8_t *data, uint32_t size);
 int drv_uart_read_dma(jxc_handle_t handle);
+
 uint8_t *drv_uart_buffer_get(jxc_handle_t handle);
 uint32_t drv_uart_buffer_size_get(jxc_handle_t handle);
 

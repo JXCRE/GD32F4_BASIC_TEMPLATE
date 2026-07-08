@@ -44,9 +44,56 @@ static void drv_uart_clock_enable(uint32_t uart)
     }
 }
 
-static uint32_t drv_uart_data_addr_get(uint32_t uart)
+static IRQn_Type drv_uart_irq_get(uint32_t uart)
 {
-    return uart + 0x04U;
+    switch(uart){
+        case USART0:
+            return USART0_IRQn;
+        case USART1:
+            return USART1_IRQn;
+        case USART2:
+            return USART2_IRQn;
+        case UART3:
+            return UART3_IRQn;
+        case UART4:
+            return UART4_IRQn;
+        case USART5:
+            return USART5_IRQn;
+#if defined(GD32F450) || defined(GD32F470)
+        case UART6:
+            return UART6_IRQn;
+        case UART7:
+            return UART7_IRQn;
+#endif
+        default:
+            return USART0_IRQn;
+    }
+}
+
+int drv_uart_enable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt, uint8_t pre_priority, uint8_t sub_priority)
+{
+    uart_handle_t *hndl = (uart_handle_t *)handle;
+
+    if(!hndl)
+        return -1;
+
+    usart_interrupt_enable(hndl->uart, interrupt);
+    nvic_irq_enable(drv_uart_irq_get(hndl->uart), pre_priority, sub_priority);
+
+    return 0;
+}
+
+int drv_uart_disable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt)
+{
+    uart_handle_t *hndl = (uart_handle_t *)handle;
+
+    if(!hndl)
+        return -1;
+
+    usart_interrupt_disable(hndl->uart, interrupt);
+    nvic_irq_disable(drv_uart_irq_get(hndl->uart));
+
+    return 0;
 }
 
 jxc_handle_t drv_uart_create(char *name, uint32_t uart, uint32_t buffer_size)
@@ -116,13 +163,12 @@ int drv_uart_hw_init(jxc_handle_t handle, uart_hardware_t *hw, uart_params_t *pa
 
     if(hndl->hw.tx_dma.valid){
         usart_dma_transmit_config(hndl->uart, USART_TRANSMIT_DMA_ENABLE);
-        drv_dma_tx_init(&hndl->hw.tx_dma, drv_uart_data_addr_get(hndl->uart));
+        drv_dma_tx_init(&hndl->hw.tx_dma, (uint32_t)&USART_DATA(hndl->uart));
     }
 
     if(hndl->hw.rx_dma.valid){
         usart_dma_receive_config(hndl->uart, USART_RECEIVE_DMA_ENABLE);
-        drv_dma_rx_init(&hndl->hw.rx_dma, drv_uart_data_addr_get(hndl->uart));
-        drv_dma_mem_update(&hndl->hw.rx_dma, hndl->buffer, hndl->buffer_size);
+        drv_dma_rx_init(&hndl->hw.rx_dma, (uint32_t)(uintptr_t)&USART_DATA(hndl->uart));
     }
 
     return 0;
@@ -141,28 +187,24 @@ int drv_uart_set_timeout(jxc_handle_t handle, uint32_t timeout)
     return 0;
 }
 
-int drv_uart_enable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt)
+FlagStatus drv_uart_interrupt_flag_get(jxc_handle_t handle, usart_interrupt_flag_enum flag)
 {
     uart_handle_t *hndl = (uart_handle_t *)handle;
 
     if(!hndl)
-        return -1;
+        return RESET;
 
-    usart_interrupt_enable(hndl->uart, interrupt);
-
-    return 0;
+    return usart_interrupt_flag_get(hndl->uart, flag);
 }
 
-int drv_uart_disable_irq(jxc_handle_t handle, usart_interrupt_enum interrupt)
+void drv_uart_interrupt_flag_clear(jxc_handle_t handle, usart_interrupt_flag_enum flag)
 {
     uart_handle_t *hndl = (uart_handle_t *)handle;
 
     if(!hndl)
-        return -1;
+        return;
 
-    usart_interrupt_disable(hndl->uart, interrupt);
-
-    return 0;
+    usart_interrupt_flag_clear(hndl->uart, flag);
 }
 
 int drv_uart_write(jxc_handle_t handle, uint8_t *data, uint32_t size)
@@ -211,16 +253,6 @@ int drv_uart_write_dma(jxc_handle_t handle, uint8_t *data, uint32_t size)
         return -1;
 
     return drv_dma_update_start(&hndl->hw.tx_dma, data, size);
-}
-
-int drv_uart_read_dma_by_extern(jxc_handle_t handle, uint8_t *data, uint32_t size)
-{
-    uart_handle_t *hndl = (uart_handle_t *)handle;
-
-    if(!hndl || !data || size == 0)
-        return -1;
-
-    return drv_dma_update_start(&hndl->hw.rx_dma, data, size);
 }
 
 int drv_uart_read_dma(jxc_handle_t handle)

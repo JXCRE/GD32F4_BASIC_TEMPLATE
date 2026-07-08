@@ -50,17 +50,10 @@ static void exit_init(void)
 }
 
 //----------------------------------------------------------------------------------------------------
-static void rcu_init(void)
-{
-    rcu_periph_clock_enable(RCU_GPIOA);
-    rcu_periph_clock_enable(RCU_SYSCFG);
-}
-
 void board_init(void)
 {
     bsp_systick_init();
     bsp_nvic_priority_group_set(NVIC_PRIGROUP_PRE0_SUB4);
-    rcu_init();
 
     gpio_init();
     exit_init();
