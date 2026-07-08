@@ -29,9 +29,9 @@ int drv_dma_tx_init(dma_info_t *dma_info, uint32_t dst_addr)
 
     dma_single_data_para_struct_init(&dma_init);
     dma_init.direction = DMA_MEMORY_TO_PERIPH;
-    dma_init.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_init.memory_inc = dma_info->memory_inc;
     dma_init.periph_addr = dst_addr;
-    dma_init.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init.periph_inc = dma_info->periph_inc;
     dma_init.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
     dma_init.priority = DMA_PRIORITY_ULTRA_HIGH;
 
@@ -58,9 +58,9 @@ int drv_dma_rx_init(dma_info_t *dma_info, uint32_t src_addr)
 
     dma_single_data_para_struct_init(&dma_init);
     dma_init.direction = DMA_PERIPH_TO_MEMORY;
-    dma_init.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_init.memory_inc = dma_info->memory_inc;
     dma_init.periph_addr = src_addr;
-    dma_init.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init.periph_inc = dma_info->periph_inc;
     dma_init.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
     dma_init.priority = DMA_PRIORITY_ULTRA_HIGH;
 
@@ -100,7 +100,7 @@ int drv_dma_mem_update(dma_info_t *dma_info, uint8_t *addr, uint32_t size)
     if(!drv_dma_is_valid(dma_info) || !addr || size == 0)
         return -1;
 
-    dma_memory_address_config(dma_info->periph, dma_info->channel, DMA_MEMORY_0, (uint32_t)(uintptr_t)addr);
+    dma_memory_address_config(dma_info->periph, dma_info->channel, DMA_MEMORY_0, (uint32_t)addr);
     dma_transfer_number_config(dma_info->periph, dma_info->channel, size);
 
     return 0;

@@ -15,6 +15,8 @@ typedef struct{
     uint32_t                periph;      // DMA0/DMA1
     dma_channel_enum        channel;     // DMA_CHx
     dma_subperipheral_enum  sub_periph;  // DMA_SUBPERIx
+    uint32_t                memory_inc;  // DMA_MEMORY_INCREASE_ENABLE/DISABLE
+    uint32_t                periph_inc;  // DMA_PERIPH_INCREASE_ENABLE/DISABLE
 }dma_info_t;
 
 #define DMA_INFO(periph_a, channel_a, sub_periph_a, valid_a) \
@@ -22,6 +24,8 @@ typedef struct{
         .periph = periph_a, \
         .channel = channel_a, \
         .sub_periph = sub_periph_a, \
+        .memory_inc = DMA_MEMORY_INCREASE_ENABLE, \
+        .periph_inc = DMA_PERIPH_INCREASE_DISABLE, \
         .valid = valid_a \
     })
 

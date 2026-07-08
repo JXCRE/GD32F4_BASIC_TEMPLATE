@@ -158,7 +158,7 @@ void fmc_read_32bit_data(uint32_t address, uint16_t length, int32_t *data_32)
     uint32_t i;
 
     for(i = 0; i < length; i++) {
-        data_32[i] = *(__IO int32_t *)(uintptr_t)address;
+        data_32[i] = *(__IO int32_t *)address;
         address = address + 4;
     }
 }
@@ -189,7 +189,7 @@ void fmc_read_8bit_data(uint32_t address, uint16_t length, int8_t *data_8)
     uint32_t i;
 
     for(i = 0; i < length; i++) {
-        data_8[i] = *(__IO int8_t *)(uintptr_t)address;
+        data_8[i] = *(__IO int8_t *)address;
         address++;
     }
 }
@@ -265,7 +265,7 @@ int drv_fmc_read(uint32_t address, uint8_t *data, int size)
     if(drv_fmc_range_check(address, size) != 0)
         return -1;
 
-    memcpy(data, (const void *)(uintptr_t)address, (uint32_t)size);
+    memcpy(data, (const void *)address, (uint32_t)size);
 
     return 0;
 }

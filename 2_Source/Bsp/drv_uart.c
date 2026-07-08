@@ -168,7 +168,7 @@ int drv_uart_hw_init(jxc_handle_t handle, uart_hardware_t *hw, uart_params_t *pa
 
     if(hndl->hw.rx_dma.valid){
         usart_dma_receive_config(hndl->uart, USART_RECEIVE_DMA_ENABLE);
-        drv_dma_rx_init(&hndl->hw.rx_dma, (uint32_t)(uintptr_t)&USART_DATA(hndl->uart));
+        drv_dma_rx_init(&hndl->hw.rx_dma, (uint32_t)&USART_DATA(hndl->uart));
     }
 
     return 0;

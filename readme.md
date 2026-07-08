@@ -29,6 +29,9 @@
 - exit
 - dma
 - uart
+- fmc
+- i2c
+- spi
 ---
 - fifo
 - queue
@@ -37,9 +40,6 @@
 
 - adc
 - dac
-- fmc
-- i2c
-- spi
 - timer
 
 ## 适配同系列其他芯片   
