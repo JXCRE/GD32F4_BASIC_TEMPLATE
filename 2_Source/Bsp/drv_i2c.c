@@ -72,7 +72,18 @@ static uint32_t drv_i2c_addr_7bit(uint8_t addr)
     return ((uint32_t)addr) << 1;
 }
 
-static int drv_i2c_start_addr(uint32_t i2c, uint8_t addr, uint32_t direction, uint32_t timeout, uint8_t wait_bus_idle)
+static uint8_t drv_i2c_addr10_header(uint16_t addr, uint32_t direction)
+{
+    uint8_t header = (uint8_t)(0xF0U | (((uint32_t)addr >> 7) & 0x06U));
+
+    if(direction == I2C_RECEIVER){
+        header |= 0x01U;
+    }
+
+    return header;
+}
+
+static int drv_i2c_start_addr7(uint32_t i2c, uint16_t addr, uint32_t direction, uint32_t timeout, uint8_t wait_bus_idle)
 {
     if(wait_bus_idle && drv_i2c_wait_flag(i2c, I2C_FLAG_I2CBSY, RESET, timeout) != 0)
         return -1;
@@ -81,11 +92,82 @@ static int drv_i2c_start_addr(uint32_t i2c, uint8_t addr, uint32_t direction, ui
     if(drv_i2c_wait_flag(i2c, I2C_FLAG_SBSEND, SET, timeout) != 0)
         return -1;
 
-    i2c_master_addressing(i2c, drv_i2c_addr_7bit(addr), direction);
+    i2c_master_addressing(i2c, drv_i2c_addr_7bit((uint8_t)addr), direction);
     if(drv_i2c_wait_flag(i2c, I2C_FLAG_ADDSEND, SET, timeout) != 0)
         return -1;
 
     return 0;
+}
+
+static int drv_i2c_start_addr10_write(uint32_t i2c, uint16_t addr, uint32_t timeout, uint8_t wait_bus_idle)
+{
+    if(wait_bus_idle && drv_i2c_wait_flag(i2c, I2C_FLAG_I2CBSY, RESET, timeout) != 0)
+        return -1;
+
+    i2c_start_on_bus(i2c);
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_SBSEND, SET, timeout) != 0)
+        return -1;
+
+    i2c_data_transmit(i2c, drv_i2c_addr10_header(addr, I2C_TRANSMITTER));
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_ADD10SEND, SET, timeout) != 0)
+        return -1;
+
+    i2c_data_transmit(i2c, (uint8_t)addr);
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_ADDSEND, SET, timeout) != 0)
+        return -1;
+
+    return 0;
+}
+
+static int drv_i2c_start_addr10_read(uint32_t i2c, uint16_t addr, uint32_t timeout, uint8_t wait_bus_idle)
+{
+    if(drv_i2c_start_addr10_write(i2c, addr, timeout, wait_bus_idle) != 0)
+        return -1;
+
+    i2c_flag_clear(i2c, I2C_FLAG_ADDSEND);
+    i2c_start_on_bus(i2c);
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_SBSEND, SET, timeout) != 0)
+        return -1;
+
+    i2c_data_transmit(i2c, drv_i2c_addr10_header(addr, I2C_RECEIVER));
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_ADDSEND, SET, timeout) != 0)
+        return -1;
+
+    return 0;
+}
+
+static int drv_i2c_start_addr10_read_after_write(uint32_t i2c, uint16_t addr, uint32_t timeout)
+{
+    i2c_start_on_bus(i2c);
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_SBSEND, SET, timeout) != 0)
+        return -1;
+
+    i2c_data_transmit(i2c, drv_i2c_addr10_header(addr, I2C_RECEIVER));
+    if(drv_i2c_wait_flag(i2c, I2C_FLAG_ADDSEND, SET, timeout) != 0)
+        return -1;
+
+    return 0;
+}
+
+static int drv_i2c_start_addr(i2c_handle_t *hndl, uint16_t addr, uint32_t direction, uint32_t timeout, uint8_t wait_bus_idle)
+{
+    if(hndl->params.address_format == I2C_ADDFORMAT_10BITS){
+        if(direction == I2C_RECEIVER)
+            return drv_i2c_start_addr10_read(hndl->i2c, addr, timeout, wait_bus_idle);
+        else
+            return drv_i2c_start_addr10_write(hndl->i2c, addr, timeout, wait_bus_idle);
+    }
+
+    return drv_i2c_start_addr7(hndl->i2c, addr, direction, timeout, wait_bus_idle);
+}
+
+static int drv_i2c_start_read_after_write(i2c_handle_t *hndl, uint16_t addr, uint32_t timeout)
+{
+    if(hndl->params.address_format == I2C_ADDFORMAT_10BITS){
+        return drv_i2c_start_addr10_read_after_write(hndl->i2c, addr, timeout);
+    }
+
+    return drv_i2c_start_addr7(hndl->i2c, addr, I2C_RECEIVER, timeout, 0U);
 }
 
 static int drv_i2c_send_mem_addr(uint32_t i2c, uint16_t mem_addr, uint8_t mem_addr_size, uint32_t timeout)
@@ -151,6 +233,16 @@ int drv_i2c_hw_init(jxc_handle_t handle, i2c_hardware_t *hw, i2c_params_t *param
     i2c_mode_addr_config(hndl->i2c, I2C_I2CMODE_ENABLE, hndl->params.address_format, hndl->params.own_address);
     i2c_ack_config(hndl->i2c, hndl->params.ack);
     i2c_enable(hndl->i2c);
+
+    if(hndl->hw.tx_dma.valid){
+        i2c_dma_config(hndl->i2c, I2C_DMA_ON);
+        drv_dma_tx_init(&hndl->hw.tx_dma, (uint32_t)&I2C_DATA(hndl->i2c));
+    }
+
+    if(hndl->hw.rx_dma.valid){
+        i2c_dma_config(hndl->i2c, I2C_DMA_ON);
+        drv_dma_rx_init(&hndl->hw.rx_dma, (uint32_t)&I2C_DATA(hndl->i2c));
+    }
 
     return 0;
 }
@@ -229,14 +321,24 @@ void drv_i2c_flag_clear(jxc_handle_t handle, i2c_flag_enum flag)
     i2c_flag_clear(hndl->i2c, flag);
 }
 
-int drv_i2c_master_write(jxc_handle_t handle, uint8_t addr, uint8_t *data, uint32_t size, uint32_t timeout)
+void drv_i2c_stop(jxc_handle_t handle)
+{
+    i2c_handle_t *hndl = (i2c_handle_t *)handle;
+
+    if(!hndl)
+        return;
+
+    i2c_stop_on_bus(hndl->i2c);
+}
+
+int drv_i2c_master_write(jxc_handle_t handle, uint16_t addr, uint8_t *data, uint32_t size, uint32_t timeout)
 {
     i2c_handle_t *hndl = (i2c_handle_t *)handle;
 
     if(!hndl || !data || size == 0)
         return -1;
 
-    if(drv_i2c_start_addr(hndl->i2c, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
+    if(drv_i2c_start_addr(hndl, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
         return -2;
     i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
 
@@ -254,14 +356,14 @@ int drv_i2c_master_write(jxc_handle_t handle, uint8_t addr, uint8_t *data, uint3
     return 0;
 }
 
-int drv_i2c_master_read(jxc_handle_t handle, uint8_t addr, uint8_t *data, uint32_t size, uint32_t timeout)
+int drv_i2c_master_read(jxc_handle_t handle, uint16_t addr, uint8_t *data, uint32_t size, uint32_t timeout)
 {
     i2c_handle_t *hndl = (i2c_handle_t *)handle;
 
     if(!hndl || !data || size == 0)
         return -1;
 
-    if(drv_i2c_start_addr(hndl->i2c, addr, I2C_RECEIVER, timeout, 1U) != 0)
+    if(drv_i2c_start_addr(hndl, addr, I2C_RECEIVER, timeout, 1U) != 0)
         return -2;
 
     if(size == 1U){
@@ -289,14 +391,14 @@ int drv_i2c_master_read(jxc_handle_t handle, uint8_t addr, uint8_t *data, uint32
     return 0;
 }
 
-int drv_i2c_mem_write(jxc_handle_t handle, uint8_t addr, uint16_t mem_addr, uint8_t mem_addr_size, uint8_t *data, uint32_t size, uint32_t timeout)
+int drv_i2c_mem_write(jxc_handle_t handle, uint16_t addr, uint16_t mem_addr, uint8_t mem_addr_size, uint8_t *data, uint32_t size, uint32_t timeout)
 {
     i2c_handle_t *hndl = (i2c_handle_t *)handle;
 
     if(!hndl || !data || size == 0 || (mem_addr_size != 1U && mem_addr_size != 2U))
         return -1;
 
-    if(drv_i2c_start_addr(hndl->i2c, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
+    if(drv_i2c_start_addr(hndl, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
         return -2;
     i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
 
@@ -317,14 +419,14 @@ int drv_i2c_mem_write(jxc_handle_t handle, uint8_t addr, uint16_t mem_addr, uint
     return 0;
 }
 
-int drv_i2c_mem_read(jxc_handle_t handle, uint8_t addr, uint16_t mem_addr, uint8_t mem_addr_size, uint8_t *data, uint32_t size, uint32_t timeout)
+int drv_i2c_mem_read(jxc_handle_t handle, uint16_t addr, uint16_t mem_addr, uint8_t mem_addr_size, uint8_t *data, uint32_t size, uint32_t timeout)
 {
     i2c_handle_t *hndl = (i2c_handle_t *)handle;
 
     if(!hndl || !data || size == 0 || (mem_addr_size != 1U && mem_addr_size != 2U))
         return -1;
 
-    if(drv_i2c_start_addr(hndl->i2c, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
+    if(drv_i2c_start_addr(hndl, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
         return -2;
     i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
 
@@ -334,7 +436,7 @@ int drv_i2c_mem_read(jxc_handle_t handle, uint8_t addr, uint16_t mem_addr, uint8
     if(drv_i2c_wait_flag(hndl->i2c, I2C_FLAG_BTC, SET, timeout) != 0)
         return -2;
 
-    if(drv_i2c_start_addr(hndl->i2c, addr, I2C_RECEIVER, timeout, 0U) != 0)
+    if(drv_i2c_start_read_after_write(hndl, addr, timeout) != 0)
         return -2;
 
     if(size == 1U){
@@ -358,6 +460,85 @@ int drv_i2c_mem_read(jxc_handle_t handle, uint8_t addr, uint16_t mem_addr, uint8
     }
 
     i2c_ack_config(hndl->i2c, hndl->params.ack);
+
+    return 0;
+}
+
+int drv_i2c_master_write_dma(jxc_handle_t handle, uint16_t addr, uint8_t *data, uint32_t size, uint32_t timeout)
+{
+    i2c_handle_t *hndl = (i2c_handle_t *)handle;
+
+    if(!hndl || !data || size == 0)
+        return -1;
+
+    if(drv_i2c_start_addr(hndl, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
+        return -2;
+    i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
+
+    return drv_dma_update_start(&hndl->hw.tx_dma, data, size);
+}
+
+int drv_i2c_master_read_dma(jxc_handle_t handle, uint16_t addr, uint8_t *data, uint32_t size, uint32_t timeout)
+{
+    i2c_handle_t *hndl = (i2c_handle_t *)handle;
+
+    if(!hndl || !data || size == 0)
+        return -1;
+
+    if(drv_i2c_start_addr(hndl, addr, I2C_RECEIVER, timeout, 1U) != 0)
+        return -2;
+
+    i2c_ack_config(hndl->i2c, I2C_ACK_ENABLE);
+    i2c_dma_last_transfer_config(hndl->i2c, I2C_DMALST_ON);
+    if(drv_dma_update_start(&hndl->hw.rx_dma, data, size) != 0)
+        return -1;
+    i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
+
+    return 0;
+}
+
+int drv_i2c_mem_write_dma(jxc_handle_t handle, uint16_t addr, uint16_t mem_addr, uint8_t mem_addr_size, uint8_t *data, uint32_t size, uint32_t timeout)
+{
+    i2c_handle_t *hndl = (i2c_handle_t *)handle;
+
+    if(!hndl || !data || size == 0 || (mem_addr_size != 1U && mem_addr_size != 2U))
+        return -1;
+
+    if(drv_i2c_start_addr(hndl, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
+        return -2;
+    i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
+
+    if(drv_i2c_send_mem_addr(hndl->i2c, mem_addr, mem_addr_size, timeout) != 0)
+        return -2;
+
+    return drv_dma_update_start(&hndl->hw.tx_dma, data, size);
+}
+
+int drv_i2c_mem_read_dma(jxc_handle_t handle, uint16_t addr, uint16_t mem_addr, uint8_t mem_addr_size, uint8_t *data, uint32_t size, uint32_t timeout)
+{
+    i2c_handle_t *hndl = (i2c_handle_t *)handle;
+
+    if(!hndl || !data || size == 0 || (mem_addr_size != 1U && mem_addr_size != 2U))
+        return -1;
+
+    if(drv_i2c_start_addr(hndl, addr, I2C_TRANSMITTER, timeout, 1U) != 0)
+        return -2;
+    i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
+
+    if(drv_i2c_send_mem_addr(hndl->i2c, mem_addr, mem_addr_size, timeout) != 0)
+        return -2;
+
+    if(drv_i2c_wait_flag(hndl->i2c, I2C_FLAG_BTC, SET, timeout) != 0)
+        return -2;
+
+    if(drv_i2c_start_read_after_write(hndl, addr, timeout) != 0)
+        return -2;
+
+    i2c_ack_config(hndl->i2c, I2C_ACK_ENABLE);
+    i2c_dma_last_transfer_config(hndl->i2c, I2C_DMALST_ON);
+    if(drv_dma_update_start(&hndl->hw.rx_dma, data, size) != 0)
+        return -1;
+    i2c_flag_clear(hndl->i2c, I2C_FLAG_ADDSEND);
 
     return 0;
 }

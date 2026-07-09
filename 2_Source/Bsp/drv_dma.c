@@ -15,6 +15,53 @@ static bool drv_dma_is_valid(dma_info_t *dma_info)
     return (dma_info && dma_info->valid);
 }
 
+static IRQn_Type drv_dma_irq_get(dma_info_t *dma_info)
+{
+    if(dma_info->periph == DMA0){
+        switch(dma_info->channel){
+            case DMA_CH0:
+                return DMA0_Channel0_IRQn;
+            case DMA_CH1:
+                return DMA0_Channel1_IRQn;
+            case DMA_CH2:
+                return DMA0_Channel2_IRQn;
+            case DMA_CH3:
+                return DMA0_Channel3_IRQn;
+            case DMA_CH4:
+                return DMA0_Channel4_IRQn;
+            case DMA_CH5:
+                return DMA0_Channel5_IRQn;
+            case DMA_CH6:
+                return DMA0_Channel6_IRQn;
+            case DMA_CH7:
+                return DMA0_Channel7_IRQn;
+            default:
+                return DMA0_Channel0_IRQn;
+        }
+    }else{
+        switch(dma_info->channel){
+            case DMA_CH0:
+                return DMA1_Channel0_IRQn;
+            case DMA_CH1:
+                return DMA1_Channel1_IRQn;
+            case DMA_CH2:
+                return DMA1_Channel2_IRQn;
+            case DMA_CH3:
+                return DMA1_Channel3_IRQn;
+            case DMA_CH4:
+                return DMA1_Channel4_IRQn;
+            case DMA_CH5:
+                return DMA1_Channel5_IRQn;
+            case DMA_CH6:
+                return DMA1_Channel6_IRQn;
+            case DMA_CH7:
+                return DMA1_Channel7_IRQn;
+            default:
+                return DMA1_Channel0_IRQn;
+        }
+    }
+}
+
 int drv_dma_tx_init(dma_info_t *dma_info, uint32_t dst_addr)
 {
     dma_single_data_parameter_struct dma_init;
@@ -91,6 +138,28 @@ int drv_dma_start(dma_info_t *dma_info)
         return -1;
 
     dma_channel_enable(dma_info->periph, dma_info->channel);
+
+    return 0;
+}
+
+int drv_dma_enable_irq(dma_info_t *dma_info, uint32_t interrupt, uint8_t pre_priority, uint8_t sub_priority)
+{
+    if(!drv_dma_is_valid(dma_info))
+        return -1;
+
+    dma_interrupt_enable(dma_info->periph, dma_info->channel, interrupt);
+    nvic_irq_enable(drv_dma_irq_get(dma_info), pre_priority, sub_priority);
+
+    return 0;
+}
+
+int drv_dma_disable_irq(dma_info_t *dma_info, uint32_t interrupt)
+{
+    if(!drv_dma_is_valid(dma_info))
+        return -1;
+
+    dma_interrupt_disable(dma_info->periph, dma_info->channel, interrupt);
+    nvic_irq_disable(drv_dma_irq_get(dma_info));
 
     return 0;
 }

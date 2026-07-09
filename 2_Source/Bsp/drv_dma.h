@@ -33,6 +33,8 @@ int drv_dma_tx_init(dma_info_t *dma_info, uint32_t dst_addr);
 int drv_dma_rx_init(dma_info_t *dma_info, uint32_t src_addr);
 int drv_dma_stop(dma_info_t *dma_info);
 int drv_dma_start(dma_info_t *dma_info);
+int drv_dma_enable_irq(dma_info_t *dma_info, uint32_t interrupt, uint8_t pre_priority, uint8_t sub_priority);
+int drv_dma_disable_irq(dma_info_t *dma_info, uint32_t interrupt);
 int drv_dma_mem_update(dma_info_t *dma_info, uint8_t *addr, uint32_t size);
 int drv_dma_update_start(dma_info_t *dma_info, uint8_t *addr, uint32_t size);
 
