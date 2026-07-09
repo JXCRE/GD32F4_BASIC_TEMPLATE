@@ -79,7 +79,7 @@ int drv_dma_tx_init(dma_info_t *dma_info, uint32_t dst_addr)
     dma_init.memory_inc = dma_info->memory_inc;
     dma_init.periph_addr = dst_addr;
     dma_init.periph_inc = dma_info->periph_inc;
-    dma_init.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+    dma_init.periph_memory_width = dma_info->periph_memory_width;
     dma_init.priority = DMA_PRIORITY_ULTRA_HIGH;
 
     dma_single_data_mode_init(dma_info->periph, dma_info->channel, &dma_init);
@@ -108,7 +108,7 @@ int drv_dma_rx_init(dma_info_t *dma_info, uint32_t src_addr)
     dma_init.memory_inc = dma_info->memory_inc;
     dma_init.periph_addr = src_addr;
     dma_init.periph_inc = dma_info->periph_inc;
-    dma_init.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+    dma_init.periph_memory_width = dma_info->periph_memory_width;
     dma_init.priority = DMA_PRIORITY_ULTRA_HIGH;
 
     dma_single_data_mode_init(dma_info->periph, dma_info->channel, &dma_init);

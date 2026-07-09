@@ -32,18 +32,20 @@
 - fmc
 - i2c
 - spi
+- adc
+- dac
+- timer
 ---
 - fifo
 - queue
 
 *未实现通用驱动*   
 
-- adc
-- dac
-- timer
+- null
 
 ## 适配同系列其他芯片   
 
 ## 版本详情   
-
+- V1.0.0   
+    实现gpio、exit、dma、uart、fmc、i2c、spi、adc、dac、timer基础驱动
 

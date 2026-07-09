@@ -16,8 +16,8 @@ extern bool _20ms_flag;
 extern bool _500ms_flag;
 
 //--------------------------------------------------VERSION
-#define MAIN_VERSION    0                       //主版本号
-#define SUB_VERSION     1                       //次版本号
+#define MAIN_VERSION    1                       //主版本号
+#define SUB_VERSION     0                       //次版本号
 #define FIX_VERSION     0                       //修复版本号
 //--------------------------------------------------SYS
 void bsp_systick_init(void);                    //初始化系统定时器
